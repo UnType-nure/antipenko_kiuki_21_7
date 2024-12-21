@@ -1,21 +1,37 @@
 import 'package:flutter/material.dart';
-import 'widgets/students.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_fonts/google_fonts.dart'; // Подключение google_fonts
+import 'screens/main_navigation.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: UniversityApp()));
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+class UniversityApp extends StatelessWidget {
+  const UniversityApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Students App',
+      title: 'University Hub',
       theme: ThemeData(
-        primarySwatch: Colors.indigo,
+        primarySwatch: Colors.blueGrey,
+        textTheme: TextTheme(
+          titleLarge: GoogleFonts.lato(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+          bodyMedium: GoogleFonts.lato(
+            fontWeight: FontWeight.normal,
+            fontSize: 16,
+          ),
+          bodySmall: GoogleFonts.lato(
+            fontWeight: FontWeight.w300,
+            fontSize: 14,
+          ),
+        ),
       ),
-      home: StudentsScreen(),
+      home: const MainNavigation(),
     );
   }
 }
