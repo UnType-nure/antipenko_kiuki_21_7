@@ -8,7 +8,11 @@ class SpecializationsView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final learners = ref.watch(learnersProvider);
+    final specState = ref.watch(learnersProvider);
+
+    if (specState.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
 
     return GridView.builder(
       padding: const EdgeInsets.all(16),
@@ -20,7 +24,7 @@ class SpecializationsView extends ConsumerWidget {
       itemCount: Specialization.values.length,
       itemBuilder: (context, index) {
         final specialization = Specialization.values[index];
-        final count = learners
+        final count = specState.learners
             .where((learner) => learner.specialization == specialization)
             .length;
 

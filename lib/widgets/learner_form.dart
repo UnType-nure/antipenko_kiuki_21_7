@@ -1,67 +1,75 @@
 import 'package:flutter/material.dart';
 import '../models/learner.dart';
 import '../models/specialization.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../providers/learners_provider.dart';
 
-class LearnerForm extends StatefulWidget {
-  final Learner? learner;
-  final Function(Learner) onSave;
+class LearnerForm extends ConsumerStatefulWidget {
+  const LearnerForm({
+    super.key,
+    this.learnerIndex
+  });
 
-  const LearnerForm({super.key, this.learner, required this.onSave});
+  final int? learnerIndex;
 
   @override
-  State<LearnerForm> createState() => _LearnerFormState();
+  ConsumerState<ConsumerStatefulWidget> createState() => _LearnerFormState();
 }
 
-class _LearnerFormState extends State<LearnerForm> {
+class _LearnerFormState extends ConsumerState<LearnerForm> {
   final _firstNameController = TextEditingController();
   final _lastNameController = TextEditingController();
-  late Specialization _selectedSpecialization;
-  late Identity _selectedGender;
-  late int _score;
+  late Specialization _selectedSpecialization = Specialization.computerScience;
+  late Identity _selectedIdentity = Identity.male;
+  late int _score = 0;
 
   @override
   void initState() {
     super.initState();
-    if (widget.learner != null) {
-      _firstNameController.text = widget.learner!.givenName;
-      _lastNameController.text = widget.learner!.familyName;
-      _selectedSpecialization = widget.learner!.specialization;
-      _selectedGender = widget.learner!.identity;
-      _score = widget.learner!.score;
-    } else {
-      _selectedSpecialization = Specialization.computerScience;
-      _selectedGender = Identity.male;
-      _score = 0;
+    if (widget.learnerIndex != null) {
+      final student = ref.read(learnersProvider).learners[widget.learnerIndex!];
+      _firstNameController.text = student.givenName;
+      _lastNameController.text = student.familyName;
+      _selectedIdentity = student.identity;
+      _selectedSpecialization = student.specialization;
+      _score = student.score;
     }
   }
 
-  void _saveLearner() {
-    if (_firstNameController.text.trim().isEmpty ||
-        _lastNameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
-      return;
+  void _saveLearner() async {
+    if (widget.learnerIndex == null)  {
+      await ref.read(learnersProvider.notifier).addLearner(
+            _firstNameController.text.trim(),
+            _lastNameController.text.trim(),
+            _selectedSpecialization,
+            _selectedIdentity,
+            _score,
+          );
+    } else {
+      await ref.read(learnersProvider.notifier).updateLearner(
+            widget.learnerIndex!,
+            _firstNameController.text.trim(),
+            _lastNameController.text.trim(),
+            _selectedSpecialization,
+            _selectedIdentity,
+            _score,
+          );
     }
 
-    final newLearner = Learner(
-      givenName: _firstNameController.text.trim(),
-      familyName: _lastNameController.text.trim(),
-      specialization: _selectedSpecialization,
-      score: _score,
-      identity: _selectedGender,
-    );
-
-    widget.onSave(newLearner);
-    Navigator.of(context).pop();
+    if (!context.mounted) return;
+    Navigator.of(context).pop(); 
   }
 
   @override
   Widget build(BuildContext context) {
+    final students = ref.watch(learnersProvider);
+    if (students.isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          widget.learner == null ? 'New Learner' : 'Edit Learner',
+          widget.learnerIndex == null ? 'New Learner' : 'Edit Learner',
         ),
       ),
       body: Padding(
@@ -110,7 +118,7 @@ class _LearnerFormState extends State<LearnerForm> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<Identity>(
-                  value: _selectedGender,
+                  value: _selectedIdentity,
                   decoration: const InputDecoration(
                     labelText: 'Gender',
                     border: OutlineInputBorder(),
@@ -121,7 +129,7 @@ class _LearnerFormState extends State<LearnerForm> {
                       child: Text(gender.toString().split('.').last),
                     );
                   }).toList(),
-                  onChanged: (value) => setState(() => _selectedGender = value!),
+                  onChanged: (value) => setState(() => _selectedIdentity = value!),
                 ),
                 const SizedBox(height: 16),
                 TextField(
@@ -144,7 +152,7 @@ class _LearnerFormState extends State<LearnerForm> {
                       vertical: 12,
                     ),
                   ),
-                  child: Text(widget.learner == null ? 'Save' : 'Update'),
+                  child: Text(widget.learnerIndex == null ? 'Save' : 'Update'),
                 ),
               ],
             ),
